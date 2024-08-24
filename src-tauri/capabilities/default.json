@@ -1,0 +1,58 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": ["main"],
+  "permissions": [
+    "shell:allow-open",
+    "dialog:default",
+    "shell:default",
+    "fs:allow-read-file",
+    "fs:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "args": true,
+          "name": "bin/ffmpeg",
+          "sidecar": true
+        },
+        {
+          "args": true,
+          "name": "bin/ffprobe",
+          "sidecar": true
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "args": true,
+          "name": "bin/ffmpeg",
+          "sidecar": true
+        },
+        {
+          "args": true,
+          "name": "bin/ffprobe",
+          "sidecar": true
+        }
+      ]
+    },
+    {
+      "identifier": "shell:allow-kill",
+      "allow": [
+        {
+          "args": true,
+          "name": "bin/ffmpeg",
+          "sidecar": true
+        },
+        {
+          "args": true,
+          "name": "bin/ffprobe",
+          "sidecar": true
+        }
+      ]
+    }
+  ]
+}
