@@ -25,7 +25,9 @@ function calculatePercentage(
 }
 
 class FFMpegManager {
+  // @ts-expect-error - private property
   private ffmpeg: Child | null = null;
+  // @ts-expect-error - private property
   private ffprobe: Child | null = null;
 
   async convertToGif(
@@ -79,7 +81,8 @@ class FFMpegManager {
     });
   }
 
-  async getMetadata(filePath: string): Promise<unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getMetadata(filePath: string): Promise<any> {
     const metadataCmd = [
       "-v",
       "quiet",

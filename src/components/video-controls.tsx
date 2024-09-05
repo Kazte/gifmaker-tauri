@@ -10,7 +10,6 @@ import { SpeedType, speedDictionary, useVideoStore } from "@/store/video.store";
 
 import { Button } from "./ui/button";
 import { useAppStore } from "@/store/app.store";
-import { useState } from "react";
 
 export default function VideoControls() {
   const appStore = useAppStore((store) => store);

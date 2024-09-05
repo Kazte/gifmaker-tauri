@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { formatTimestamp, unformatTimestamp } from "@/lib/utils";
 
+import { formatTimestamp } from "@/lib/utils";
 import { useAppStore } from "@/store/app.store";
 import { useVideoStore } from "@/store/video.store";
 
