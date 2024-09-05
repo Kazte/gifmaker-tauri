@@ -1,163 +1,117 @@
-import { type Child, Command } from '@tauri-apps/plugin-shell';
-import { Dispatch } from 'react';
-import { getPercentage, unformatTimestamp } from './utils';
+import { type Child, Command } from "@tauri-apps/plugin-shell";
 
-let ffmpeg: Child;
-let ffprobe: Child;
+type ProgressCallback = (progress: number) => void;
 
-let videoDuration = 0;
-
-async function getVideoDuration(filePath: string): Promise<number> {
-  const videoDurationCmd = [
-    '-v',
-    'error',
-    '-select_streams',
-    'v:0',
-    '-show_entries',
-    'format=duration',
-    '-of',
-    'default=noprint_wrappers=1:nokey=1',
-    filePath
-  ];
-
-  const ffprobeSidecar = Command.sidecar('bin/ffprobe', videoDurationCmd);
-
-  ffprobeSidecar.stdout.on('data', (data) => {
-    videoDuration = Number.parseFloat(data.toString());
-  });
-
-  ffprobe = await ffprobeSidecar.spawn();
-
-  return videoDuration;
-}
-
-async function convertToGif(
-  inputFilePath: string,
-  outputFilePath: string,
-  // setStatus: Dispatch<React.SetStateAction<string>>
-  setStatus: Dispatch<React.SetStateAction<boolean>>,
-  setProgress: Dispatch<React.SetStateAction<number>>,
-  onComplete: () => void,
-  onError: (error: any) => void
-): Promise<void> {
-  setStatus(true);
-
-  if (videoDuration === 0) {
-    getVideoDuration(inputFilePath);
-  }
-
-  console.log(videoDuration);
-
-  const convertToGifCmd = [
-    '-i',
-    inputFilePath,
-    '-vf',
-    'fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse',
-    '-c:v',
-    'gif',
-    '-loop',
-    '0',
-    outputFilePath
-  ];
-
-  const ffmpegSidecar = Command.sidecar('bin/ffmpeg', [
-    '-y',
-    ...convertToGifCmd
-  ]);
-
-  ffmpegSidecar.stdout.on('data', (data) => {
-    console.log(data);
-  });
-
-  ffmpegSidecar.stderr.on('data', async (data) => {
-    // console.log(data);
-
-    const progress = extractProgress(data.toString(), videoDuration);
-
-    if (progress !== undefined) {
-      console.log(progress);
-      setProgress(progress);
-    }
-  });
-
-  ffmpegSidecar.on('error', (error) => {
-    console.error(error);
-  });
-
-  ffmpegSidecar.on('close', (code) => {
-    setStatus(false);
-    if (code.code === 0) {
-      setProgress(100);
-      onComplete();
-      return;
-    }
-
-    console.error(code);
-    onError(code);
-  });
-
-  await ffmpegSidecar.spawn();
-}
-
-function extractProgress(data: string, totalDuration: number) {
+function parseProgress(
+  data: string,
+  totalDuration: number,
+): number | undefined {
   const timeRegex = /time=(\d+:\d+:\d+\.\d+)/;
   const match = data.match(timeRegex);
 
   if (!match) return;
 
   const currentTime = match[1];
-
-  const percentage = timeStringToPercentage(currentTime, totalDuration);
-
-  return percentage;
+  return calculatePercentage(currentTime, totalDuration);
 }
 
-function timeStringToPercentage(
+function calculatePercentage(
   time: string,
-  totalDurationInSeconds: number
+  totalDurationInSeconds: number,
 ): number {
-  const parts = time.split(':');
-  const minutes = parseInt(parts[0], 10);
-  const seconds = parseInt(parts[1], 10);
-  const milliseconds = parseFloat(parts[2]);
-
-  const totalSeconds = minutes * 60 + seconds + milliseconds;
-
-  console.log(totalSeconds, totalDurationInSeconds);
-
+  const [hours, minutes, seconds] = time.split(":").map(parseFloat);
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
   return (totalSeconds / totalDurationInSeconds) * 100;
 }
 
-async function getMetadata(
-  filePath: string,
-  setMetadata: Dispatch<React.SetStateAction<any>>
-) {
-  const metadataCmd = [
-    '-v',
-    'quiet',
-    '-print_format',
-    'json',
-    '-show_format',
-    '-show_streams',
-    filePath
-  ];
+class FFMpegManager {
+  private ffmpeg: Child | null = null;
+  private ffprobe: Child | null = null;
 
-  const ffprobeSidecar = Command.sidecar('bin/ffprobe', metadataCmd);
+  async convertToGif(
+    inputFilePath: string,
+    outputFilePath: string,
+    duration: number,
+    setProgress: ProgressCallback,
+    speed: number = 1,
+  ): Promise<void> {
+    const convertToGifCmd = [
+      "-i",
+      inputFilePath,
+      "-vf",
+      `fps=10,scale=320:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse,setpts=${1 / speed}*PTS`,
+      "-c:v",
+      "gif",
+      "-loop",
+      "0",
+      outputFilePath,
+    ];
 
-  let metadata = '';
+    console.log(convertToGifCmd);
 
-  ffprobeSidecar.stdout.on('data', (data) => {
-    metadata += data;
-  });
+    const ffmpegSidecar = Command.sidecar("bin/ffmpeg", [
+      "-y",
+      ...convertToGifCmd,
+    ]);
 
-  ffprobeSidecar.on('close', (code) => {
-    if (code.code === 0) {
-      setMetadata(JSON.parse(metadata));
-    } else {
-      console.error(code);
-    }
-  });
+    return new Promise((resolve, reject) => {
+      ffmpegSidecar.stdout.on("data", (data) => console.log(data));
 
-  ffprobe = await ffprobeSidecar.spawn();
+      ffmpegSidecar.stderr.on("data", (data) => {
+        const progress = parseProgress(data.toString(), duration);
+        if (progress !== undefined) {
+          setProgress(progress);
+        }
+      });
+
+      ffmpegSidecar.on("close", (code) => {
+        if (code.code === 0) {
+          setProgress(100);
+          resolve();
+        } else {
+          reject(`ffmpeg process failed with code ${code.code}`);
+        }
+      });
+
+      ffmpegSidecar.spawn().then((child) => {
+        this.ffmpeg = child;
+      });
+    });
+  }
+
+  async getMetadata(filePath: string): Promise<unknown> {
+    const metadataCmd = [
+      "-v",
+      "quiet",
+      "-print_format",
+      "json",
+      "-show_format",
+      "-show_streams",
+      filePath,
+    ];
+
+    const ffprobeSidecar = Command.sidecar("bin/ffprobe", metadataCmd);
+
+    let metadata = "";
+
+    return new Promise((resolve, reject) => {
+      ffprobeSidecar.stdout.on("data", (data) => {
+        metadata += data;
+      });
+
+      ffprobeSidecar.on("close", (code) => {
+        if (code.code === 0) {
+          resolve(JSON.parse(metadata));
+        } else {
+          reject(`ffprobe process failed with code ${code.code}`);
+        }
+      });
+
+      ffprobeSidecar.spawn().then((child) => {
+        this.ffprobe = child;
+      });
+    });
+  }
 }
-export { getVideoDuration, convertToGif, getMetadata };
+
+export const ffmpegManager = new FFMpegManager();
