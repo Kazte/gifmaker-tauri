@@ -47,7 +47,9 @@ export default function VideoControls() {
   const handleSetSpeed = () => {
     const speedKeys = speedDictionary;
 
-    const speedKeysArray = Object.keys(speedKeys).map(Number);
+    const speedKeysArray = Object.keys(speedKeys)
+      .map(Number)
+      .sort((a, b) => a - b);
 
     const currentIndex = speedKeysArray.indexOf(Number(videoStore.speed));
 
