@@ -1,11 +1,11 @@
 import { create } from "zustand";
 
 export const speedDictionary: Record<number, string> = {
+  0.25: "0.25x",
   0.5: "0.5x",
   1: "1x",
   1.5: "1.5x",
   2: "2x",
-  2.5: "2.5x",
   4: "4x",
   8: "8x",
   16: "16x",
