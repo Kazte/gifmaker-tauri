@@ -2,7 +2,9 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "shell:allow-open",
     "dialog:default",
@@ -53,6 +55,7 @@
           "sidecar": true
         }
       ]
-    }
+    },
+    "updater:default"
   ]
 }

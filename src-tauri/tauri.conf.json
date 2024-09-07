@@ -1,6 +1,6 @@
 {
   "productName": "gifmaker",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "identifier": "com.gifmaker.app",
   "build": {
     "beforeDevCommand": "yarn dev",
@@ -35,6 +35,16 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["bin/ffmpeg", "bin/ffprobe"]
+    "externalBin": ["bin/ffmpeg", "bin/ffprobe"],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkzRENGMzhBQzM4MEZCMzAKUldRdys0RERpdlBjays3aEJGRTB6eUlEWVFkdVBZN3o5N1Z2WXdUZXNtci9obzNsYjJ6engyaXAK",
+      "endpoint": "https://github.com/kazte/gifmaker-tauri/releases/latest/download/latest.json",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }
