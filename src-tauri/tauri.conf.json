@@ -41,7 +41,9 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkzRENGMzhBQzM4MEZCMzAKUldRdys0RERpdlBjays3aEJGRTB6eUlEWVFkdVBZN3o5N1Z2WXdUZXNtci9obzNsYjJ6engyaXAK",
-      "endpoint": "https://github.com/kazte/gifmaker-tauri/releases/latest/download/latest.json",
+      "endpoints": [
+        "https://github.com/kazte/gifmaker-tauri/releases/latest/download/latest.json"
+      ],
       "windows": {
         "installMode": "passive"
       }

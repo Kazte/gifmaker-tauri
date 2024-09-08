@@ -1,9 +1,11 @@
 import { ReactNode, createContext, useContext, useState } from "react";
 
 import ProgressDialog from "./progress-dialog";
+import UpdateDialog from "./update-dialog";
 
 export enum DialogType {
   PROGRESS = "PROGRESS",
+  UPDATE = "UPDATE",
 }
 
 export type DialogContextType = {
@@ -28,6 +30,7 @@ type DialogProviderProps = {
 
 const dialogs: Record<DialogType, ReactNode> = {
   [DialogType.PROGRESS]: <ProgressDialog />,
+  [DialogType.UPDATE]: <UpdateDialog />,
 };
 
 function getDialogComponent(dialog: DialogType): ReactNode {
